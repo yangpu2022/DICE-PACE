@@ -1,0 +1,197 @@
+{\rtf1\mac\ansicpg10000\cocoartf1671\cocoasubrtf500
+{\fonttbl\f0\fswiss\fcharset0 Helvetica-Bold;\f1\fswiss\fcharset0 Helvetica;\f2\fswiss\fcharset0 ArialMT;
+\f3\fswiss\fcharset0 Arial-ItalicMT;\f4\fmodern\fcharset0 Courier;}
+{\colortbl;\red255\green255\blue255;\red26\green26\blue26;\red255\green255\blue255;\red16\green60\blue192;
+\red127\green0\blue128;\red160\green32\blue240;\red34\green139\blue34;}
+{\*\expandedcolortbl;;\cssrgb\c13333\c13333\c13333;\cssrgb\c100000\c100000\c100000;\cssrgb\c6667\c33333\c80000;
+\cssrgb\c57919\c12801\c57269;\csgenericrgb\c62745\c12549\c94118;\csgenericrgb\c13333\c54510\c13333;}
+\paperw11900\paperh16840\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\b\fs48 \cf0 Running the matlab DICE-PACE code
+\f1\b0\fs24 \
+\
+\
+for a description of the DICE2016 model, use \
+\pard\pardeftab720\li640\fi-640\partightenfactor0
+
+\f2\fs26 \cf2 \cb3 \expnd0\expndtw0\kerning0
+Nordhaus, W. D. (2017). Revisiting the social cost of carbon. 
+\f3\i Proceedings of the National Academy of Sciences of the United States of America
+\f2\i0 . {\field{\*\fldinst{HYPERLINK "https://doi.org/10.1073/pnas.1609244114"}}{\fldrslt \cf4 \ul \ulc4 https://doi.org/10.1073/pnas.1609244114}}\cf4 \ul \ulc4  
+\f1\fs24 \cf0 \cb1 \kerning1\expnd0\expndtw0 \ulnone \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 and references therein. \
+The DICE2016 GAMS code, on which this code is based, is available at 
+\f4\fs26 \expnd0\expndtw0\kerning0
+http://www.econ.yale.edu/~nordhaus/homepage/homepage/DICE2016R-091916ap.gms \
+
+\f1\fs24 \kerning1\expnd0\expndtw0 For DICE-PACE, see Grubb and Wieners, 2019, WIRES (submitted)\
+\
+\
+This code version was last updated on dec. 2nd, 2019, by Claudia Wieners\
+c.wieners@santannapisa.it\
+\
+\
+relevant FILES\
+optimizeDetDICE: This is the script that organises the optimisation and the plotting\
+evalDICEPACE: This is a function that runs the actual model; is called from optimizeDetDICE \
+\
+\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f0\b \cf5 HOW TO RUN
+\f1\b0 \cf0 \
+\
+\'97 open optimiseDetDICE and evalDICEPACE in the matlab editor \
+\'97 define settings in optimiseDetDICE and evalDICEPACE (see below)\
+\'97 then go into the optimiseDetDICE window and click on the green triangle button \'93Run\'94 and wait a few minutes. \
+\
+
+\f0\b \cf5 BRIEF TECHNICAL REMARKS
+\f1\b0 \cf0 \
+\
+ 
+\f0\b optimizeDetDICE
+\f1\b0 \
+\
+\ul User-defined settings:\ulnone \
+\'97 set the number of time steps and the size of the time step. Note: You should run about 100-150 years longer than the time span you are interested in (depending on the rate of time preference) -> check whether changing tmax does not change your results! \
+The start time should be 2015, because the initialisation is set up for that year. \
+\'97 decide whether or not to optimise the saving rate along with abatement by setting sr_flag. Since the saving rate is around 0.25 when optimising freely, this value is chosen when not optimising freely.  (Fixing sr saves computation time, but normally the code runs within a few minutes so this is likely not a constraint.)\
+\'97 plotyn should be 1 unless you want no plots\'85 \
+\'97 pliavec is a vector containing all pliability values to be used. (In the plotting section at the end of the code, it is assumed that pliavec has 3 entries; if not: adjust the plot legends by adding/removing entries, and if needed, add entries to dashvec.)\
+\
+\ul What happens in the rest of the code: \ulnone \
+\
+Next, the code puts these inputs into a file 
+\f4\fs20 \cf6 DICEdataDump.mat
+\fs24 \cf0  
+\f1 which will be used in evalDICEPACE. \
+\
+Then, the initial guess and upper and lower bounds of the decision variables (abatement mu and - if freely optimised - saving rate sr) are set for the optimisation. For abatement, the lower bound should be 0 and the upper bound 1 (unless you want to consider negative emissions). \
+For the saving rate, lower and upper bound should really be 0 and 1. \
+The initial values of mu and sr are put into a 2*tmax matrix (if sr is optimised) or a 1*tmax matrix (otherwise), called x0. similar for lower and upperbounds. \
+\
+This being done, the matlab feature fmincon is used to find the matrix x (obeying to the bounds) for which J (=-1 * welfare) is minimal, i.e. for which welfare is maximal. \
+\
+Having found the optimal x, the evalDICEPACE is evaluated once more, with the optimal x as input, in order to save the results, which will be put into  files named DICEpliaXXX.mat (where XXX is the pliability value * 100)\
+[The reason for this procedure is that it is that evalDICEPACE only returns J to the script optimiseDetDICE, and it is easiest to save the model results within evalDICEPACE. Of course we do not want to save after each iteration during the optimisation but only once the optimal solution is found]\
+\
+Next, evalDICEPACE is evaluated once more using as input zero abatement (just for comparison purposes in the plots). The result is saved in a file \'85no_abate.mat. \
+\
+Finally, plots are made\'85 \
+(If running with C-ROADS or Greensfunction climate model, then edit the plot for the carbon content!)\
+\
+\
+
+\f0\b evalDICEPACE
+\f1\b0 \
+\
+\ul User-defined settings:\ulnone \
+The following settings yield DICE2016: \
+\
+\pard\pardeftab720\partightenfactor0
+
+\f4\fs20 \cf0 prodflag=1; \cf7 %total factor productivity
+\fs24 \cf0 \
+
+\fs20  \cf7 %1 = DICE2016; 2 = RCP8.5-based (slower increase)
+\fs24 \cf0 \
+
+\fs20 carbintflag=1; \cf7 %carbon intensity (business as usual CO2 emis. per $ GDP)
+\fs24 \cf0 \
+
+\fs20  \cf7 %1 = DICE2016; 2 = RCP8.5-based (slower decrease)
+\fs24 \cf0 \
+
+\fs20 exoglearnflag=1; \cf7 % exogenous reduction in abatement cost
+\fs24 \cf0 \
+
+\fs20  \cf7 %1=DICE2016; 2= user-defined (currently just a constant)
+\fs24 \cf0 \
+
+\fs20 abcostg=0.01/2; \cf7 %decline in abatement cost 
+\fs24 \cf0 \
+
+\fs20  \cf7 %DICE has 0.025/5=0.01/2 (per year); 
+\fs24 \cf0 \
+
+\fs20 diceCparflag=16; \cf7 %which carbon cycle parameters to use in DICE
+\fs24 \cf0 \
+
+\fs20  \cf7 %13: carbon cycle from 2013; 16: from 2016
+\fs24 \cf0 \
+
+\fs20  \cf7 %%% remark: DICE2016 has unrealistically slow carbon uptake. 
+\fs24 \cf0 \
+
+\fs20 damflag=1; \cf7 %damage function
+\fs24 \cf0 \
+
+\fs20  \cf7 %1=DICE2016 (temp. dependent); 2=dependent on cumulative emissions 3=Weitzmann
+\fs24 \cf0 \
+
+\fs20  \cf7 %4=DICE2016+Paris
+\fs24 \cf0 \
+
+\fs20 otherforceflag=1; \cf7 %non-CO2 forcing 
+\fs24 \cf0 \
+
+\fs20  \cf7 %0 = no non-CO2 forcing 
+\fs24 \cf0 \
+
+\fs20  \cf7 %1 = DICE2016 (but maybe with partial abatement, see abfrac_other);
+\fs24 \cf0 \
+
+\fs20  
+\fs24 \
+
+\fs20 \cf7 % USER-DEFINED PARAMETERS (i.e. those often adjusted)  
+\fs24 \cf0 \
+
+\fs20 abcostexp=2.6; \cf7 %the exponent in the abatement cost function 
+\fs24 \cf0 \
+
+\fs20  \cf7 %DICE2016 has 2.6; Grubb et al had 2.0 
+\fs24 \cf0 \
+
+\fs20 transtime=30; \cf7 %typical technological transition time in years (relevant if plia>0) 
+\fs24 \cf0 \
+
+\fs20 climsens=3.1; \cf7 %climate sensitivity (warming [K] / doubling CO2 ; DICE2016 standard is =3.1
+\fs24 \cf0 \
+
+\fs20 abfrac_other=0.0; \cf7 %fraction of non-CO2 forcing that can be abated 
+\fs24 \cf0 \
+
+\fs20  \cf7 %(along with CO2, at no extra cost)
+\fs24 \cf0 \
+
+\fs20  \cf7 %DICE2016 has 0; Helwegen et al 2019 used 0.5
+\fs24 \cf0 \
+
+\fs20 damthreshold=2; \cf7 %temp threshold in case of damflag==4 [K] 
+\fs24 \cf0 \
+
+\fs20 damfactor=1.0; \cf7 %multiplying the original damage by a factor (only if damflag==1)
+\fs24 \cf0 \
+
+\fs20 rhofactor=1; \cf7 %multiplying rate of pure time preference 
+\fs24 \cf0 \
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+
+\f1 \cf0 \
+\
+\
+\pard\tx566\tx1133\tx1700\tx2267\tx2834\tx3401\tx3968\tx4535\tx5102\tx5669\tx6236\tx6803\pardirnatural\partightenfactor0
+\cf0 \ul \ulc0 What happens in the rest of the code: \ulnone \
+\
+Next, the code loads the settings saved earlier from optimiseDetDICE, and splits the input x (i.e. the variable to be changed through optimisation) into mu and sr (or only mu if sr is not optimised). \
+Then all those exogenous functions are determined (population, total factor productivity, \'85) \
+Finally, the model is run\
+And - if saveyn==1 - all results are saved to a .mat file. \
+\
+\
+}
